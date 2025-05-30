@@ -4,6 +4,7 @@ node_modules/
 backend.hcl
 .env
 *.service
+*.tgz
 
 # Local .terraform directories
 **/.terraform/*
