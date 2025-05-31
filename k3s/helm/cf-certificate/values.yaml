@@ -3,10 +3,14 @@
 nameOverride: ""
 fullnameOverride: ""
 
+certManagerNamespace: "cert-manager"
+
 # Cloudflare DNS API Key
 cfSecretName: "cf-dns-token"
 cfSecretKey: "token"
+cfEmail: ""
 cfDnsZone: ""
 cfToken: ""
-nameSpace: "cert-manager"
+
+leIssuerRef: "letsencrypt-prod"
 leEmail: ""
