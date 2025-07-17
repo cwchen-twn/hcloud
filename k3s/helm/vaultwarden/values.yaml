@@ -1,0 +1,49 @@
+
+
+trashAutoDeleteDays: "10"
+signupsAllowed: false
+
+ingress:
+  enabled: true
+  hostname: xxx
+  class: "traefik"
+  tls: true
+  tlsSecret: xxx
+  additionalAnnotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+
+database:
+  type: postgresql
+  existingSecret: "prod-db-creds"
+  existingSecretKey: "secret-uri"
+
+adminToken:
+  existingSecret: "xxx"
+  existingSecretKey: "xxx"
+
+smtp:
+  existingSecret: smtpsecrets
+  security: "force_tls"
+  host: mx01.contoso.com
+  port: 465
+  from: no-reply@contoso.com
+  fromName: "Vault Administrator"
+  username:
+    existingSecretKey: SMTP_USERNAME
+  password:
+    existingSecretKey: SMTP_PASSWORD
+
+storage:
+  data:
+    name: "vw-storage"
+    size: "15Gi"
+    class: "local-path"
+    path: "/data"
+    keepPvc: true
+  attachments:
+    name: "vw-storage"
+    size: "15Gi"
+    class: "local-path"
+    path: /files
+    keepPvc: true

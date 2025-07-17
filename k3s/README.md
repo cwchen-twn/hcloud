@@ -47,6 +47,7 @@ kubectl get nodes
 
 1. [Install the cert manager using helm](https://cert-manager.io/docs/installation/helm/#installing-with-helm)
     ```bash
+    # https://cert-manager.io/docs/installation/helm/
     helm repo add jetstack https://charts.jetstack.io --force-update
     
     helm install \
@@ -55,6 +56,18 @@ kubectl get nodes
       --create-namespace \
       --version v1.17.2 \
       --set crds.enabled=true
+
+    # https://cert-manager.io/docs/installation/upgrade/
+    helm search repo jetstack/cert-manager --versions
+    helm upgrade \
+      --namespace cert-manager \
+      --reset-then-reuse-values \
+      --version v1.18.2 \
+      cert-manager jetstack/cert-manager
+
+    # https://cert-manager.io/docs/installation/kubectl/#verify
+    helm ls --all-namespaces
+    kubectl get pods -n cert-manager
     ```
 
 2. Install the cluster issuer
@@ -67,3 +80,29 @@ kubectl get nodes
       --set cfDnsZone=xxx \
       --set leEmail=xxx@xxx
     ```
+
+
+## Vaultwarden
+
+**REF**
+- https://github.com/guerzon/vaultwarden/blob/main/charts/vaultwarden/README.md
+
+```bash
+# Installation
+export RELEASE_NAME=vaultwarden
+export NAMESPACE=xxx
+export DOMAIN_NAME=xxx
+
+helm install \
+  $RELEASE_NAME vaultwarden/vaultwarden \
+  --namespace $NAMESPACE \
+  -f values.yaml
+
+# Upgrade
+# helm search repo vaultwarden --versions
+helm upgrade -i \
+  $RELEASE_NAME vaultwarden/vaultwarden \
+  -n $NAMESPACE \
+  --version v1.18.2 \
+  -f values.yaml
+```
