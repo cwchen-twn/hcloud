@@ -37,9 +37,27 @@ scp -i ~/.ssh/id_ed25519_hetzner xxx@xxx:/etc/rancher/k3s/k3s.yaml ~/.kube/confi
 # user: hcloud
 # current-context: hcloud
 kubectl get nodes
+
+# https://docs.k3s.io/upgrades/automated
+# Check the automated upgrades plans
+kubectl -n system-upgrade get plans -o wide
+kubectl -n system-upgrade get jobs
 ```
 
-## Cert Manager
+## Necessary Secrets
+
+```bash
+kubectl create secret generic vw-secrets -n catopia \
+  --from-literal=PG_URI="postgresql://xxx:xxx@xx.xx.xx.xx:xxx/vaultwarden" \
+  --from-literal=VW_HOST="xxx.xxx.xxx" \
+  --from-literal=VW_ADMIN_TOKEN="xxx" \
+  --from-literal=SMTP_USER="xxx" \
+  --from-literal=SMTP_PASSWD="xxx"
+```
+
+## Helm Charts
+
+### Cert Manager and CF-Certificates
 
 **REF**
 - https://cert-manager.io/docs
@@ -82,7 +100,7 @@ kubectl get nodes
     ```
 
 
-## Vaultwarden
+### Vaultwarden
 
 **REF**
 - https://github.com/guerzon/vaultwarden/blob/main/charts/vaultwarden/README.md
@@ -90,12 +108,17 @@ kubectl get nodes
 ```bash
 # Installation
 export RELEASE_NAME=vaultwarden
-export NAMESPACE=xxx
-export DOMAIN_NAME=xxx
+export NAMESPACE=catopia
 
 helm install \
   $RELEASE_NAME vaultwarden/vaultwarden \
-  --namespace $NAMESPACE \
+  -n $NAMESPACE \
+  --set domain="https://vw.chenantunez.com/" \
+  --set ingress.hostname="vw.chenantunez.com" \
+  --set ingress.tlsSecret="chenantunez.com-tls" \
+  # --set smtp.host="xxx.xxx.xxx" \
+  # --set smtp.port=xxx \
+  # --set smtp.from="xxx@xxx.xxx" \
   -f values.yaml
 
 # Upgrade
@@ -103,6 +126,6 @@ helm install \
 helm upgrade -i \
   $RELEASE_NAME vaultwarden/vaultwarden \
   -n $NAMESPACE \
-  --version v1.18.2 \
-  -f values.yaml
+  --version 1.18.2 \
+  --reset-then-reuse-values
 ```

@@ -1,49 +1,45 @@
 
-
 trashAutoDeleteDays: "10"
 signupsAllowed: false
+webVaultEnabled: true
+
+rocket:
+  port: 8080
+  workers: 5
 
 ingress:
   enabled: true
-  hostname: xxx
+  # hostname: xxx
   class: "traefik"
   tls: true
-  tlsSecret: xxx
+  # tlsSecret: xxx
   additionalAnnotations:
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
     traefik.ingress.kubernetes.io/router.tls: "true"
 
 database:
   type: postgresql
-  existingSecret: "prod-db-creds"
-  existingSecretKey: "secret-uri"
+  existingSecret: "vw-secrets"
+  existingSecretKey: "PG_URI"
 
 adminToken:
-  existingSecret: "xxx"
-  existingSecretKey: "xxx"
+  existingSecret: "vw-secrets"
+  existingSecretKey: "VW_ADMIN_TOKEN"
 
-smtp:
-  existingSecret: smtpsecrets
-  security: "force_tls"
-  host: mx01.contoso.com
-  port: 465
-  from: no-reply@contoso.com
-  fromName: "Vault Administrator"
-  username:
-    existingSecretKey: SMTP_USERNAME
-  password:
-    existingSecretKey: SMTP_PASSWORD
+# smtp:
+#   security: "force_tls"
+#   # host: xxx
+#   # port: xxx
+#   # from: xxx
+#   fromName: "Vault Administrator"
+#   existingSecret: vw-secrets
+#   username:
+#     existingSecretKey: SMTP_USER
+#   password:
+#     existingSecretKey: SMTP_PASSWD
 
 storage:
-  data:
-    name: "vw-storage"
-    size: "15Gi"
-    class: "local-path"
-    path: "/data"
-    keepPvc: true
-  attachments:
-    name: "vw-storage"
-    size: "15Gi"
-    class: "local-path"
-    path: /files
-    keepPvc: true
+  existingVolumeClaim:
+    claimName: "vaultwarden-pvc"
+    dataPath: "/data"
+    attachmentsPath: /data/attachments

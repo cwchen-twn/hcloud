@@ -75,6 +75,34 @@ runcmd:
   # Install k3s
   - |
     curl -sfL https://get.k3s.io | sh -s - --datastore-endpoint="postgres://${ssh_user}:${postgres_password}@localhost/k3s"
-  - chown ${ssh_user}:${ssh_user} /etc/rancher/k3s/k3s.yaml
-  - chown ${ssh_user}:${ssh_user} /var/lib/rancher/k3s/server/node-token
+  # - chown ${ssh_user}:${ssh_user} /etc/rancher/k3s/k3s.yaml
+  # - chown ${ssh_user}:${ssh_user} /var/lib/rancher/k3s/server/node-token
+  - chown -R ${ssh_user}:${ssh_user} /var/lib/rancher
+  - chown -R ${ssh_user}:${ssh_user} /etc/rancher
+  - |
+    kubectl apply -f https://github.com/rancher/system-upgrade-controller/releases/latest/download/crd.yaml
+  - |
+    kubectl apply -f https://github.com/rancher/system-upgrade-controller/releases/latest/download/system-upgrade-controller.yaml
+  - |
+    echo '
+    apiVersion: upgrade.cattle.io/v1
+    kind: Plan
+    metadata:
+      name: server-plan
+      namespace: system-upgrade
+    spec:
+      concurrency: 1
+      cordon: true
+      nodeSelector:
+        matchExpressions:
+        - key: node-role.kubernetes.io/control-plane
+          operator: In
+          values:
+          - "true"
+      serviceAccountName: system-upgrade
+      upgrade:
+        image: rancher/k3s-upgrade
+      channel: https://update.k3s.io/v1-release/channels/stable
+    ' | kubectl apply -f -
+  # Log the end
   - echo "Cloud-init finished provisioning" > /var/log/cloud-init.done
