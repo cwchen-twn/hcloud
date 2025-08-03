@@ -60,8 +60,10 @@ kubectl create secret generic vw-secrets -n catopia \
 ### Cert Manager and CF-Certificates
 
 **REF**
-- https://cert-manager.io/docs
-- https://gist.github.com/davidcallen/86ea7b19ff74abb72b0d671d1885a889
+- [cert-manager.io/docs/installation/helm](https://cert-manager.io/docs/installation/helm/)
+- [cert-manager.io/docs/tutorials/acme/dns-validation](https://cert-manager.io/docs/tutorials/acme/dns-validation/)
+- [gist.github.com/davidcallen](https://gist.github.com/davidcallen/86ea7b19ff74abb72b0d671d1885a889)
+- [k3s.rocks/https-cert-manager-letsencrypt](https://k3s.rocks/https-cert-manager-letsencrypt/)
 
 1. [Install the cert manager using helm](https://cert-manager.io/docs/installation/helm/#installing-with-helm)
     ```bash
@@ -90,13 +92,20 @@ kubectl create secret generic vw-secrets -n catopia \
 
 2. Install the cluster issuer
     ```bash
-    helm install 
+    helm install cf-certificate k3s/helm/cf-certificate \
+      --set cfToken="xxx" \
+      --set cfDnsZone=xxx.xxx \
+      --set leEmail=xxx@xxx.xxx \
+      --set cfEmail=xxx@xxx.xxx \
+      --create-namespace \
+      -n xxx
     ```
     ```bash
     helm template . \
-      --set cfToken=xxx \
-      --set cfDnsZone=xxx \
-      --set leEmail=xxx@xxx
+      --set cfToken="xxx" \
+      --set cfDnsZone=xxx.xxx \
+      --set leEmail=xxx@xxx.xxx \
+      --set cfEmail=xxx@xxx.xxx
     ```
 
 
