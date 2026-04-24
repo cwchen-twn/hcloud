@@ -26,17 +26,17 @@ adminToken:
   existingSecret: "vw-secrets"
   existingSecretKey: "VW_ADMIN_TOKEN"
 
-# smtp:
-#   security: "force_tls"
-#   # host: xxx
-#   # port: xxx
-#   # from: xxx
-#   fromName: "Vault Administrator"
-#   existingSecret: vw-secrets
-#   username:
-#     existingSecretKey: SMTP_USER
-#   password:
-#     existingSecretKey: SMTP_PASSWD
+smtp:
+  security: "force_tls"
+  # host: xxx
+  # port: xxx
+  # from: xxx
+  fromName: "Vault Administrator"
+  existingSecret: vw-secrets
+  username:
+    existingSecretKey: SMTP_USER
+  password:
+    existingSecretKey: SMTP_PASSWD
 
 storage:
   existingVolumeClaim:

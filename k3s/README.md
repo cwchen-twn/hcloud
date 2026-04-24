@@ -125,16 +125,18 @@ helm install \
   --set domain="https://vw.chenantunez.com/" \
   --set ingress.hostname="vw.chenantunez.com" \
   --set ingress.tlsSecret="chenantunez.com-tls" \
-  # --set smtp.host="xxx.xxx.xxx" \
-  # --set smtp.port=xxx \
-  # --set smtp.from="xxx@xxx.xxx" \
+  --set smtp.host="xxx" \
+  --set smtp.port=xxx \
+  --set smtp.from="xxx" \
   -f values.yaml
 
 # Upgrade
 # helm search repo vaultwarden --versions
+export VERSION=0.34.4
+
 helm upgrade -i \
   $RELEASE_NAME vaultwarden/vaultwarden \
   -n $NAMESPACE \
-  --version 1.18.2 \
+  --version $VERSION \
   --reset-then-reuse-values
 ```
