@@ -59,7 +59,8 @@ kubectl create secret generic vw-secrets -n catopia \
 
 ### Cert Manager and CF-Certificates
 
-**REF**
+#### Cert Manager - REF
+
 - [cert-manager.io/docs/installation/helm](https://cert-manager.io/docs/installation/helm/)
 - [cert-manager.io/docs/tutorials/acme/dns-validation](https://cert-manager.io/docs/tutorials/acme/dns-validation/)
 - [gist.github.com/davidcallen](https://gist.github.com/davidcallen/86ea7b19ff74abb72b0d671d1885a889)
@@ -91,6 +92,7 @@ kubectl create secret generic vw-secrets -n catopia \
     ```
 
 2. Install the cluster issuer
+
     ```bash
     helm install cf-certificate k3s/helm/cf-certificate \
       --set cfToken="xxx" \
@@ -100,6 +102,7 @@ kubectl create secret generic vw-secrets -n catopia \
       --create-namespace \
       -n xxx
     ```
+
     ```bash
     helm template . \
       --set cfToken="xxx" \
@@ -108,14 +111,15 @@ kubectl create secret generic vw-secrets -n catopia \
       --set cfEmail=xxx@xxx.xxx
     ```
 
-
 ### Vaultwarden
 
-**REF**
-- https://github.com/guerzon/vaultwarden/blob/main/charts/vaultwarden/README.md
+#### Vaultwarden - REF
+
+- [github.com/guerzon/vaultwarden/Readme.md](https://github.com/guerzon/vaultwarden/blob/main/charts/vaultwarden/README.md)
 
 ```bash
 # Installation
+# helm uninstall vaultwarden -n catopia
 export RELEASE_NAME=vaultwarden
 export NAMESPACE=catopia
 
@@ -131,8 +135,9 @@ helm install \
   -f values.yaml
 
 # Upgrade
+# helm repo update
 # helm search repo vaultwarden --versions
-export VERSION=0.34.4
+export VERSION=0.36.2
 
 helm upgrade -i \
   $RELEASE_NAME vaultwarden/vaultwarden \
@@ -140,3 +145,29 @@ helm upgrade -i \
   --version $VERSION \
   --reset-then-reuse-values
 ```
+
+## Hetzner SMTP configurations
+
+1. Test the email service provider
+
+    ```bash
+    swaks \
+      --to xxx@gmail.com \
+      --from xxx@xxx.com \
+      --server smtp.purelymail.com \
+      --port 465 \
+      --auth LOGIN \
+      --auth-user xxx@xxx.com \
+      --auth-password 'xxxx' \
+      --tls-on-connect \
+      --header "Subject: Test email via swaks" \
+      --body "This is a test email sent using swaks."
+    ```
+
+2. Request Hetzner to enable the SMTP
+
+    ```bash
+    - go to https://console.hetzner.com/support
+    - Create a new support request > Technical > Server Issue: Sending mails not possible
+    - Write down the requests, usages
+    ```
