@@ -67,6 +67,7 @@ kubectl create secret generic vw-secrets -n catopia \
 - [k3s.rocks/https-cert-manager-letsencrypt](https://k3s.rocks/https-cert-manager-letsencrypt/)
 
 1. [Install the cert manager using helm](https://cert-manager.io/docs/installation/helm/#installing-with-helm)
+
     ```bash
     # https://cert-manager.io/docs/installation/helm/
     helm repo add jetstack https://charts.jetstack.io --force-update
@@ -144,6 +145,16 @@ helm upgrade -i \
   -n $NAMESPACE \
   --version $VERSION \
   --reset-then-reuse-values
+```
+
+#### Vaultwarden - Postgres Backup
+
+```bash
+# Backup on the original digital ocean droplet using nerdctl
+nerdctl exec --user postgres -it postgres pg_dump vaultwarden > vw.sql
+
+# Restore on the hetzner VPS using psql
+psql -U cwc1222 -d vaultwarden -f vw.sql
 ```
 
 ## Hetzner SMTP configurations
