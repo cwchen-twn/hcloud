@@ -1,0 +1,29 @@
+# Applied standalone via kubectl (not managed by Helm) because K3S creates
+# this resource via its internal addon system and cannot be adopted by a
+# Helm release. Apply with: kubectl apply -f traefik-helmchartconfig.yaml
+#
+# This merges with the K3S-generated access log config that already exists.
+apiVersion: helm.cattle.io/v1
+kind: HelmChartConfig
+metadata:
+  name: traefik
+  namespace: kube-system
+spec:
+  valuesContent: |-
+    logs:
+      access:
+        enabled: true
+        format: json
+    metrics:
+      prometheus:
+        enabled: true
+        entryPoint: metrics
+        addRoutersLabels: true
+        addServicesLabels: true
+        addEntryPointsLabels: true
+    ports:
+      metrics:
+        port: 9100
+        expose:
+          default: false
+        protocol: TCP

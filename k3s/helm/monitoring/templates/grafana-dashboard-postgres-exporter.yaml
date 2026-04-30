@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-postgres-exporter
+  namespace: {{ .Release.Namespace }}
+  labels:
+    grafana_dashboard: "1"
+data:
+  postgres-exporter.json: |-
+{{ .Files.Get "files/dashboards/postgres-exporter.json" | indent 4 }}

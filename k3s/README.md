@@ -53,7 +53,22 @@ kubectl create secret generic vw-secrets -n catopia \
   --from-literal=VW_ADMIN_TOKEN="xxx" \
   --from-literal=SMTP_USER="xxx" \
   --from-literal=SMTP_PASSWD="xxx"
+
+kubectl create secret generic monitor-secrets -n monitoring \
+  --from-literal=GF_ADMIN_USER="admin" \
+  --from-literal=GF_ADMIN_PASSWORD="xxx" \
+  --from-literal=PG_DATA_SOURCE="postgresql://xxx:xxx@xx.xx.xx.xx:xxx/postgres?sslmode=disable"
 ```
+
+## Traefik Configuration
+
+`k3s/traefik-helmchartconfig.yaml` customizes K3S's managed Traefik deployment. It is applied with `kubectl apply` rather than Helm because K3S's internal addon system owns the `traefik` HelmChartConfig resource and Helm cannot adopt it.
+
+```bash
+kubectl apply -f k3s/traefik-helmchartconfig.yaml
+```
+
+Current config: access logging (JSON format) + Prometheus metrics endpoint on port 9100 (internal only, scraped by the monitoring chart).
 
 ## Helm Charts
 
@@ -155,6 +170,87 @@ nerdctl exec --user postgres -it postgres pg_dump vaultwarden > vw.sql
 
 # Restore on the hetzner VPS using psql
 psql -U cwc1222 -d vaultwarden -f vw.sql
+```
+
+### Monitoring (Prometheus + Grafana)
+
+Local chart at `k3s/helm/monitoring`. Deploys: Prometheus, Grafana, Node Exporter, Postgres Exporter, and enables Traefik metrics.
+
+#### Add helm repos and fetch dependencies
+
+```bash
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo add grafana https://grafana.github.io/helm-charts
+helm repo update
+
+helm dependency update k3s/helm/monitoring
+```
+
+#### Install
+
+```bash
+export RELEASE_NAME=monitoring
+export NAMESPACE=monitoring
+
+kubectl create namespace $NAMESPACE
+
+# Create monitor-secrets before installing (see Necessary Secrets above)
+
+# Apply Traefik metrics config if not already done (see Traefik Configuration above)
+kubectl apply -f k3s/traefik-helmchartconfig.yaml
+
+helm install \
+  $RELEASE_NAME k3s/helm/monitoring \
+  -n $NAMESPACE
+
+# Verify all pods come up
+kubectl get pods -n $NAMESPACE
+kubectl get pods -n kube-system -l app.kubernetes.io/name=traefik
+```
+
+Grafana is available at `https://grafana.chenantunez.com` once the ingress and TLS certificate are ready. The three dashboards (Node Exporter Full, PostgreSQL, Traefik) are downloaded from grafana.com on first pod startup.
+
+#### Upgrade
+
+```bash
+helm dependency update k3s/helm/monitoring
+
+helm upgrade -i \
+  $RELEASE_NAME k3s/helm/monitoring \
+  -n $NAMESPACE \
+  --reset-then-reuse-values
+```
+
+#### Upgrade sub-chart versions (Prometheus, Grafana, Node Exporter, Postgres Exporter)
+
+Sub-chart versions are constrained by the `^` (caret) ranges in `k3s/helm/monitoring/Chart.yaml`. Running `helm dependency update` pulls the latest version within each range automatically — no manual edits needed unless you want to cross a major version boundary.
+
+```bash
+# See what versions are currently locked
+cat k3s/helm/monitoring/Chart.lock
+
+# Check what newer versions are available within the current ranges
+helm search repo prometheus-community/prometheus --versions | head -5
+helm search repo grafana/grafana --versions | head -5
+helm search repo prometheus-community/prometheus-node-exporter --versions | head -5
+helm search repo prometheus-community/prometheus-postgres-exporter --versions | head -5
+
+# Pull latest versions within the ^ ranges and upgrade
+helm repo update
+helm dependency update k3s/helm/monitoring
+helm upgrade -i monitoring k3s/helm/monitoring -n monitoring --reset-then-reuse-values
+```
+
+To upgrade across a major version (e.g. grafana `^8` → `^9`), edit the version constraint in `k3s/helm/monitoring/Chart.yaml` first, then run the commands above. Check the chart's changelog for breaking changes before doing so.
+
+#### Verify Traefik metrics
+
+```bash
+# After the HelmChartConfig is applied, Traefik pods restart automatically.
+# Confirm the metrics service is up and reachable from within the cluster:
+kubectl get svc traefik-metrics -n kube-system
+kubectl run -it --rm debug --image=curlimages/curl --restart=Never -- \
+  curl -s http://traefik-metrics.kube-system.svc.cluster.local:9100/metrics | head -20
 ```
 
 ## Hetzner SMTP configurations

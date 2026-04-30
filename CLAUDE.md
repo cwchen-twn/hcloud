@@ -83,6 +83,32 @@ helm install cert-manager jetstack/cert-manager \
   --version v1.17.2 --set crds.enabled=true
 ```
 
+### monitoring (local chart with sub-chart dependencies)
+
+Uses `k3s/helm/monitoring/`. Deploys Prometheus, Grafana, Node Exporter, and Postgres Exporter as Helm sub-chart dependencies. Also creates a `ClusterIP` service (`traefik-metrics.kube-system`) so Prometheus can scrape Traefik. Traefik metrics are enabled via `k3s/traefik-helmchartconfig.yaml` (a K3S-level config applied separately with `kubectl apply` — see below).
+
+Sensitive values come from the `monitor-secrets` Kubernetes secret:
+
+```bash
+kubectl create secret generic monitor-secrets -n monitoring \
+  --from-literal=GF_ADMIN_USER="admin" \
+  --from-literal=GF_ADMIN_PASSWORD="xxx" \
+  --from-literal=PG_DATA_SOURCE="postgresql://user:pass@10.0.1.1:5432/postgres?sslmode=disable"
+
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo add grafana https://grafana.github.io/helm-charts
+helm repo update
+helm dependency update k3s/helm/monitoring
+
+helm install monitoring k3s/helm/monitoring -n monitoring --create-namespace
+
+# Upgrade
+helm dependency update k3s/helm/monitoring
+helm upgrade -i monitoring k3s/helm/monitoring -n monitoring --reset-then-reuse-values
+```
+
+Grafana is accessible at `https://grafana.chenantunez.com`. Three dashboards (Node Exporter Full ID 1860, PostgreSQL ID 9628, Traefik ID 17346) are downloaded from grafana.com on first startup. The release name **must** be `monitoring` — the Prometheus server URL and scrape targets in `values.yaml` are hardcoded to `monitoring-prometheus-server.monitoring.svc.cluster.local` and related service names derived from that release name.
+
 ### Vaultwarden (upstream chart + local values)
 
 Uses `k3s/helm/vaultwarden/values.yaml`. Sensitive values come from the `vw-secrets` Kubernetes secret:
@@ -119,5 +145,6 @@ helm upgrade -i vaultwarden vaultwarden/vaultwarden \
 - PostgreSQL on the VPS serves both K3S (as its HA datastore) and Vaultwarden. K3S pods reach Postgres via the host's private IP (`10.0.1.1`) on the `10.0.1.0/24` subnet; `pg_hba.conf` allows `10.42.0.0/16` (K3S pod CIDR) with password auth.
 - The `cf-certificate` chart creates a single wildcard cert (`*.domain.tld`) stored as `<domain>-tls` secret, shared by all ingresses.
 - Vaultwarden's `values.yaml` references `vw-secrets` for all sensitive config; nothing sensitive lives in values files.
-- K3S uses Traefik as its ingress controller (installed by default).
+- K3S uses Traefik as its ingress controller (installed by default). `k3s/traefik-helmchartconfig.yaml` is a cluster-level config applied with `kubectl apply` (not Helm) that enables Prometheus metrics and preserves the existing access-log settings. K3S's addon system owns the `traefik` HelmChartConfig, so Helm cannot manage it; changes here cause a Traefik pod restart.
 - Automated K3S upgrades are managed by the system-upgrade-controller, installed via cloud-init.
+- The monitoring chart's Grafana ingress reuses the same `chenantunez.com-tls` wildcard TLS secret created by the `cf-certificate` chart.
