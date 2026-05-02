@@ -22,17 +22,12 @@ cp backend.hcl.example backend.hcl   # fill in R2 credentials
 terraform init -backend-config=backend.hcl
 ```
 
-The `email/` directory is a **separate** Terraform root for Cloudflare email DNS records (PurelyMail MX/SPF/DKIM/DMARC). It has its own `backend.hcl` and state key (`cloudflare-email.tfstate`).
-
 ## Common Terraform commands
 
 ```bash
 terraform plan
 terraform apply
 terraform destroy
-
-# From email/ for email DNS
-cd email && terraform plan
 ```
 
 ## SSH tunnels setup
@@ -148,3 +143,5 @@ helm upgrade -i vaultwarden vaultwarden/vaultwarden \
 - K3S uses Traefik as its ingress controller (installed by default). `k3s/traefik-helmchartconfig.yaml` is a cluster-level config applied with `kubectl apply` (not Helm) that enables Prometheus metrics and preserves the existing access-log settings. K3S's addon system owns the `traefik` HelmChartConfig, so Helm cannot manage it; changes here cause a Traefik pod restart.
 - Automated K3S upgrades are managed by the system-upgrade-controller, installed via cloud-init.
 - The monitoring chart's Grafana ingress reuses the same `chenantunez.com-tls` wildcard TLS secret created by the `cf-certificate` chart.
+- PurelyMail email DNS records (MX, SPF, DKIM×3, DMARC, ownership proof) are managed in `modules/cloudflare/main.tf` as part of the main Terraform root — there is no separate `email/` root. `purelymail_ownership_proof` and `subdomains` are root-level variables set in `terraform.tfvars`.
+- The Hetzner server resource has `lifecycle { ignore_changes = [user_data] }` so that changes to `cloud-init.yaml` after initial provisioning do not trigger a server rebuild.

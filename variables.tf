@@ -11,6 +11,16 @@ variable "domain" {
   description = "Domain name"
 }
 
+variable "subdomains" {
+  type = list(string)
+  description = "List of subdomains to create A and AAAA records for"
+}
+
+variable "purelymail_ownership_proof" {
+  type = string
+  description = "Purely Mail ownership proof token"
+}
+
 // Hetzner Cloud
 
 variable "hcloud_token" {

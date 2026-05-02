@@ -84,6 +84,11 @@ resource "hcloud_server" "server" {
     locale = var.cloud_init_locale
     timezone = var.cloud_init_timezone
   })
+  lifecycle {
+    ignore_changes = [
+      user_data
+    ]
+  }
 
   labels = var.labels
 
