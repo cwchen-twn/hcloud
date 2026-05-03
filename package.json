@@ -9,6 +9,6 @@
 		"info": "wrangler r2 bucket info tf-state"
 	},
 	"devDependencies": {
-		"wrangler": "^4.15.2"
+		"wrangler": "^4.27.0"
 	}
 }

@@ -1,0 +1,45 @@
+
+trashAutoDeleteDays: "10"
+signupsAllowed: false
+webVaultEnabled: true
+
+rocket:
+  port: 8080
+  workers: 5
+
+ingress:
+  enabled: true
+  # hostname: xxx
+  class: "traefik"
+  tls: true
+  # tlsSecret: xxx
+  additionalAnnotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+
+database:
+  type: postgresql
+  existingSecret: "vw-secrets"
+  existingSecretKey: "PG_URI"
+
+adminToken:
+  existingSecret: "vw-secrets"
+  existingSecretKey: "VW_ADMIN_TOKEN"
+
+smtp:
+  security: "force_tls"
+  # host: xxx
+  # port: xxx
+  # from: xxx
+  fromName: "Vault Administrator"
+  existingSecret: vw-secrets
+  username:
+    existingSecretKey: SMTP_USER
+  password:
+    existingSecretKey: SMTP_PASSWD
+
+storage:
+  existingVolumeClaim:
+    claimName: "vaultwarden-pvc"
+    dataPath: "/data"
+    attachmentsPath: /data/attachments

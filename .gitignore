@@ -1,9 +1,14 @@
+# Claude
+.mcp.json
+
 # Node modules
 node_modules/
 
 backend.hcl
 .env
 *.service
+*.tgz
+**/charts/
 
 # Local .terraform directories
 **/.terraform/*

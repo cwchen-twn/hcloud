@@ -1,0 +1,12 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ .Values.cfDnsZone }}
+spec:
+  secretName: {{ .Values.cfDnsZone }}-tls
+  issuerRef:
+    name: {{ .Values.leIssuerRef }}
+    kind: ClusterIssuer
+  dnsNames:
+  - "*.{{ .Values.cfDnsZone }}"
+

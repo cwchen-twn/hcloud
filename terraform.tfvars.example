@@ -22,7 +22,7 @@ network_name="Catopia Network"
 
 # Cloudflare DNS
 cloudflare_api_token_dns=""
+purelymail_ownership_proof=""
 domain="chenantunez.com"
-dns_ttl=3600
-dkim_selector=""
-dkim_pubkey=""
+subdomains = ["catopia"]
+

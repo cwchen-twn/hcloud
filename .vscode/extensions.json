@@ -5,6 +5,9 @@
         "bierner.markdown-preview-github-styles",
         "joffreykern.markdown-toc",
         "mhutchie.git-graph",
-        "coolbear.systemd-unit-file"
+        "coolbear.systemd-unit-file",
+        "ms-kubernetes-tools.vscode-kubernetes-tools",
+        "Tim-Koehler.helm-intellisense",
+        "redhat.vscode-yaml"
     ]
 }

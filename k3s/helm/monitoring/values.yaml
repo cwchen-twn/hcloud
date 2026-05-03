@@ -1,0 +1,127 @@
+# Release name is assumed to be "monitoring" deployed to namespace "monitoring".
+# If you change the release name, update prometheus.extraScrapeConfigs and
+# grafana.datasources to match the new Prometheus server service name.
+
+certificate:
+  name: chenantunez.com
+  secretName: chenantunez.com-tls
+  clusterIssuer: letsencrypt-prod
+  dnsNames:
+    - "*.chenantunez.com"
+
+prometheus:
+  # Disable bundled sub-components managed separately in this chart
+  alertmanager:
+    enabled: false
+  prometheus-pushgateway:
+    enabled: false
+  kube-state-metrics:
+    enabled: false
+  prometheus-node-exporter:
+    enabled: false
+
+  server:
+    persistentVolume:
+      enabled: true
+      size: 10Gi
+      storageClass: local-path
+    retention: 30d
+
+  # Appended to the generated prometheus.yml scrape_configs section
+  extraScrapeConfigs: |
+    - job_name: 'node-exporter'
+      static_configs:
+        - targets:
+            - 'monitoring-prometheus-node-exporter.monitoring.svc.cluster.local:9100'
+    - job_name: 'postgres-exporter'
+      static_configs:
+        - targets:
+            - 'monitoring-prometheus-postgres-exporter.monitoring.svc.cluster.local:80'
+    - job_name: 'traefik'
+      static_configs:
+        - targets:
+            - 'traefik-metrics.kube-system.svc.cluster.local:9100'
+    - job_name: 'gitea'
+      static_configs:
+        - targets:
+            - 'gitea-http.gitea.svc.cluster.local:3000'
+      metrics_path: /metrics
+
+grafana:
+  admin:
+    existingSecret: "monitor-secrets"
+    userKey: "GF_ADMIN_USER"
+    passwordKey: "GF_ADMIN_PASSWORD"
+
+  persistence:
+    enabled: true
+    size: 5Gi
+    storageClassName: local-path
+
+  datasources:
+    datasources.yaml:
+      apiVersion: 1
+      datasources:
+        - name: Prometheus
+          type: prometheus
+          url: http://monitoring-prometheus-server.monitoring.svc.cluster.local
+          access: proxy
+          isDefault: true
+
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+        - name: default
+          orgId: 1
+          folder: ""
+          type: file
+          disableDeletion: false
+          editable: true
+          options:
+            path: /var/lib/grafana/dashboards/default
+
+  # postgres-exporter and traefik dashboards are downloaded from grafana.com
+  # at pod startup via the download-dashboards init container.
+  # node-exporter dashboard is provisioned via ConfigMap (see templates/) to
+  # fix the node_boot_time → node_boot_time_seconds metric rename in v1.x.
+  dashboards:
+    default: {}
+
+  initChownData:
+    enabled: false
+
+  sidecar:
+    dashboards:
+      enabled: true
+      label: grafana_dashboard
+      labelValue: "1"
+
+  ingress:
+    enabled: true
+    ingressClassName: traefik
+    hosts:
+      - grafana.chenantunez.com
+    tls:
+      - secretName: chenantunez.com-tls
+        hosts:
+          - grafana.chenantunez.com
+    annotations:
+      traefik.ingress.kubernetes.io/router.entrypoints: websecure
+      traefik.ingress.kubernetes.io/router.tls: "true"
+
+prometheus-node-exporter:
+  # Allow scheduling on nodes with NoSchedule taints (control-plane in single-node K3S)
+  tolerations:
+    - effect: NoSchedule
+      operator: Exists
+
+prometheus-postgres-exporter:
+  # monitor-secrets must contain PG_DATA_SOURCE as a full postgres URI:
+  # postgresql://user:pass@xxx:xxx@xx.xx.xx.xx:xxx/postgres?sslmode=disable
+  config:
+    datasourceSecret:
+      name: "monitor-secrets"
+      key: "PG_DATA_SOURCE"
+  serviceMonitor:
+    enabled: false

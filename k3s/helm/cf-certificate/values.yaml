@@ -1,0 +1,16 @@
+
+# This is to override the chart name.
+nameOverride: ""
+fullnameOverride: ""
+
+certManagerNamespace: "cert-manager"
+
+# Cloudflare DNS API Key
+cfSecretName: "cf-dns-token"
+cfSecretKey: "token"
+cfEmail: ""
+cfDnsZone: ""
+cfToken: ""
+
+leIssuerRef: "letsencrypt-prod"
+leEmail: ""

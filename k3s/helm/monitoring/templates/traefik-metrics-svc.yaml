@@ -1,0 +1,17 @@
+# ClusterIP service targeting Traefik pods on the metrics port so Prometheus
+# can scrape traefik-metrics.kube-system.svc.cluster.local:9100/metrics.
+apiVersion: v1
+kind: Service
+metadata:
+  name: traefik-metrics
+  namespace: kube-system
+spec:
+  selector:
+    app.kubernetes.io/name: traefik
+    app.kubernetes.io/instance: traefik-kube-system
+  ports:
+    - name: metrics
+      port: 9100
+      targetPort: 9100
+      protocol: TCP
+  type: ClusterIP

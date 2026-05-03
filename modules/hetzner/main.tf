@@ -39,6 +39,14 @@ resource "hcloud_firewall" "firewall" {
       "::/0"
     ]
   }
+
+  rule {
+    description = "Allow Gitea SSH traffic"
+    direction   = "in"
+    protocol    = "tcp"
+    port        = "2222"
+    source_ips  = ["0.0.0.0/0", "::/0"]
+  }
 }
 
 resource "hcloud_network" "network" {
@@ -84,6 +92,11 @@ resource "hcloud_server" "server" {
     locale = var.cloud_init_locale
     timezone = var.cloud_init_timezone
   })
+  lifecycle {
+    ignore_changes = [
+      user_data
+    ]
+  }
 
   labels = var.labels
 

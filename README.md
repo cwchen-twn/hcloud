@@ -9,17 +9,19 @@ bun install
 # Create the R2 bucket to store the terraform state
 bun run create
 
-# export PG_CONN_STR=postgres://user:pass@db.example.com/terraform
-# terraform init
+# Copy and fill in the R2 backend credentials
+cp backend.hcl.example backend.hcl
 
-# Remember to fill the cloudflare R2 bucket info in backend.hcl
-# bun run create // create r2 bucket tokens
-# cp backend.hcl.example backend.hcl // fill the previous output secrets to this file
+# Copy and fill in terraform variables (hcloud token, cloudflare token, subdomains, purelymail_ownership_proof, etc.)
+cp terraform.tfvars.example terraform.tfvars
+
 terraform init -backend-config=backend.hcl
 terraform plan
 terraform apply
 terraform destroy
 ```
+
+Hetzner server DNS A/AAAA records, and PurelyMail email DNS records (MX, SPF, DKIM, DMARC) are all managed in the same Terraform root via `modules/cloudflare`.
 
 ## How to find available images
 

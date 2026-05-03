@@ -74,6 +74,7 @@ module "cloudflare" {
   hetzner_ipv4 = data.hcloud_primary_ip.primary_ip_ipv4.ip_address
   hetzner_ipv6 = data.hcloud_primary_ip.primary_ip_ipv6.ip_address
   zone_id = data.cloudflare_zone.domain.zone_id
-  subdomains = ["catopia", "vw"]
+  subdomains = var.subdomains
+  purelymail_ownership_proof = var.purelymail_ownership_proof
   depends_on = [ module.hetzner ]
 }
