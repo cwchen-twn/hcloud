@@ -134,14 +134,59 @@ helm upgrade -i vaultwarden vaultwarden/vaultwarden \
   -n catopia --version 0.36.2 --reset-then-reuse-values
 ```
 
+### Gitea (local chart wrapper with sub-chart dependency)
+
+Uses `k3s/helm/gitea/`. A local chart wrapper (same pattern as monitoring) that bundles a cert-manager `Certificate`, a `PersistentVolumeClaim`, and the upstream `gitea/gitea` chart as a sub-chart dependency. Registration is disabled; SSH git access is on port 2222.
+
+Sensitive values come from the `gitea-secrets` Kubernetes secret:
+
+```bash
+kubectl create secret generic gitea-secrets -n gitea \
+  --from-literal=username="<admin_user>" \
+  --from-literal=password="<admin_password>" \
+  --from-literal=DB_HOST="xx.xx.xx.xx:xxx" \
+  --from-literal=DB_PASSWORD="<db_password>"
+```
+
+Before installing, create the Postgres database on the VPS:
+
+```bash
+psql -U postgres -c "CREATE USER cwc1222 WITH PASSWORD 'xxx';"
+psql -U postgres -c "CREATE DATABASE gitea OWNER cwc1222;"
+```
+
+```bash
+helm repo add gitea https://dl.gitea.com/charts/
+helm repo update
+helm dependency update k3s/helm/gitea
+
+helm install gitea k3s/helm/gitea -n gitea --create-namespace
+
+# Upgrade
+helm upgrade -i gitea k3s/helm/gitea -n gitea
+```
+
+Gitea is accessible at `https://git.chenantunez.com`. SSH git clones use port 2222: `ssh://git@git.chenantunez.com:2222/<user>/<repo>.git`.
+
+**Admin password note:** `passwordMode: initialOnlyNoReset` means the password is only set on the very first user creation. If you need to reset it (e.g. after wiping and recreating the DB), use:
+
+```bash
+kubectl exec -n gitea -c gitea \
+  $(kubectl get pod -n gitea -l app.kubernetes.io/name=gitea -o jsonpath='{.items[0].metadata.name}') \
+  -- gitea admin user change-password --username <user> --password <new_password>
+```
+
+**Fresh install note:** Gitea user data lives in Postgres, not the PVC (the PVC stores git repositories). Deleting the PVC alone does not give a clean slate — you must also drop and recreate the `gitea` database.
+
 ## Architecture notes
 
-- The firewall only opens ports 22, 80, and 443; all other access (Postgres, K3S API) goes through SSH tunnels.
-- PostgreSQL on the VPS serves both K3S (as its HA datastore) and Vaultwarden. K3S pods reach Postgres via the host's private IP (`10.0.1.1`) on the `10.0.1.0/24` subnet; `pg_hba.conf` allows `10.42.0.0/16` (K3S pod CIDR) with password auth.
+- The firewall opens ports 22, 80, 443, and 2222 (Gitea SSH); all other access (Postgres, K3S API) goes through SSH tunnels.
+- PostgreSQL on the VPS serves K3S (as its HA datastore), Vaultwarden, and Gitea. K3S pods reach Postgres via the host's private IP (`10.0.1.1`) on the `10.0.1.0/24` subnet; `pg_hba.conf` allows `10.42.0.0/16` (K3S pod CIDR) with password auth.
 - The `cf-certificate` chart creates a single wildcard cert (`*.domain.tld`) stored as `<domain>-tls` secret, shared by all ingresses.
 - Vaultwarden's `values.yaml` references `vw-secrets` for all sensitive config; nothing sensitive lives in values files.
 - K3S uses Traefik as its ingress controller (installed by default). `k3s/traefik-helmchartconfig.yaml` is a cluster-level config applied with `kubectl apply` (not Helm) that enables Prometheus metrics and preserves the existing access-log settings. K3S's addon system owns the `traefik` HelmChartConfig, so Helm cannot manage it; changes here cause a Traefik pod restart.
 - Automated K3S upgrades are managed by the system-upgrade-controller, installed via cloud-init.
-- The monitoring chart's Grafana ingress reuses the same `chenantunez.com-tls` wildcard TLS secret created by the `cf-certificate` chart.
+- The monitoring and Gitea charts each create their own cert-manager `Certificate` resource in their respective namespaces (via `templates/certificate.yaml`), which causes cert-manager to copy the wildcard TLS secret into that namespace. All ingresses reference `chenantunez.com-tls` locally.
+- The Gitea chart uses `strategy.type: Recreate` instead of `RollingUpdate` because `hostPort: 2222` cannot be held by two pods simultaneously during a rolling update.
 - PurelyMail email DNS records (MX, SPF, DKIM×3, DMARC, ownership proof) are managed in `modules/cloudflare/main.tf` as part of the main Terraform root — there is no separate `email/` root. `purelymail_ownership_proof` and `subdomains` are root-level variables set in `terraform.tfvars`.
 - The Hetzner server resource has `lifecycle { ignore_changes = [user_data] }` so that changes to `cloud-init.yaml` after initial provisioning do not trigger a server rebuild.

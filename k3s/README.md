@@ -58,6 +58,12 @@ kubectl create secret generic monitor-secrets -n monitoring \
   --from-literal=GF_ADMIN_USER="admin" \
   --from-literal=GF_ADMIN_PASSWORD="xxx" \
   --from-literal=PG_DATA_SOURCE="postgresql://xxx:xxx@xx.xx.xx.xx:xxx/postgres?sslmode=disable"
+
+kubectl create secret generic gitea-secrets -n gitea \
+  --from-literal=username="xxx" \
+  --from-literal=password="xxx" \
+  --from-literal=DB_HOST="xx.xx.xx.xx:xxx" \
+  --from-literal=DB_PASSWORD="xxx"
 ```
 
 ## Traefik Configuration
@@ -251,6 +257,79 @@ To upgrade across a major version (e.g. grafana `^8` → `^9`), edit the version
 kubectl get svc traefik-metrics -n kube-system
 kubectl run -it --rm debug --image=curlimages/curl --restart=Never -- \
   curl -s http://traefik-metrics.kube-system.svc.cluster.local:9100/metrics | head -20
+```
+
+### Gitea
+
+Local chart wrapper at `k3s/helm/gitea`. Bundles a cert-manager `Certificate`, a `PersistentVolumeClaim`, and the upstream `gitea/gitea` chart as a sub-chart dependency. Uses the existing VPS Postgres instance; registration is disabled; SSH git access is on port 2222.
+
+#### Add helm repo and fetch dependencies
+
+```bash
+helm repo add gitea https://dl.gitea.com/charts/
+helm repo update
+
+helm dependency update k3s/helm/gitea
+```
+
+#### Prepare Postgres (run on VPS)
+
+```bash
+psql -U postgres -c "CREATE USER cwc1222 WITH PASSWORD 'xxx';"
+psql -U postgres -c "CREATE DATABASE gitea OWNER cwc1222;"
+```
+
+#### Install
+
+```bash
+export RELEASE_NAME=gitea
+export NAMESPACE=gitea
+
+kubectl create namespace $NAMESPACE
+
+# Create gitea-secrets before installing (see Necessary Secrets above)
+
+helm install $RELEASE_NAME k3s/helm/gitea -n $NAMESPACE
+
+# Verify pods come up
+kubectl get pods -n $NAMESPACE
+```
+
+Gitea is available at `https://git.chenantunez.com`. SSH git clones use port 2222:
+
+```bash
+git clone ssh://git@git.chenantunez.com:2222/<user>/<repo>.git
+```
+
+#### Upgrade
+
+```bash
+helm upgrade -i gitea k3s/helm/gitea -n gitea
+```
+
+#### Reset admin password
+
+`passwordMode: initialOnlyNoReset` means the password is set only on the very first user creation. To reset it:
+
+```bash
+kubectl exec -n gitea -c gitea \
+  $(kubectl get pod -n gitea -l app.kubernetes.io/name=gitea -o jsonpath='{.items[0].metadata.name}') \
+  -- gitea admin user change-password --username <user> --password <new_password>
+```
+
+#### Fresh install (clean slate)
+
+Gitea stores user accounts in Postgres, not the PVC (the PVC holds git repositories). Deleting the PVC alone is not enough — drop and recreate the database too:
+
+```bash
+psql -U postgres -c "DROP DATABASE gitea;"
+psql -U postgres -c "CREATE DATABASE gitea OWNER cwc1222;"
+```
+
+Then reinstall:
+
+```bash
+helm upgrade -i gitea k3s/helm/gitea -n gitea
 ```
 
 ## Hetzner SMTP configurations

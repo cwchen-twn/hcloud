@@ -41,6 +41,11 @@ prometheus:
       static_configs:
         - targets:
             - 'traefik-metrics.kube-system.svc.cluster.local:9100'
+    - job_name: 'gitea'
+      static_configs:
+        - targets:
+            - 'gitea-http.gitea.svc.cluster.local:3000'
+      metrics_path: /metrics
 
 grafana:
   admin:
