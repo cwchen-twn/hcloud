@@ -47,7 +47,7 @@ kubectl -n system-upgrade get jobs
 ## Necessary Secrets
 
 ```bash
-kubectl create secret generic vw-secrets -n catopia \
+kubectl create secret generic vw-secrets -n vaultwarden \
   --from-literal=PG_URI="postgresql://xxx:xxx@xx.xx.xx.xx:xxx/vaultwarden" \
   --from-literal=VW_HOST="xxx.xxx.xxx" \
   --from-literal=VW_ADMIN_TOKEN="xxx" \
@@ -122,7 +122,7 @@ Current config: access logging (JSON format) + Prometheus metrics endpoint on po
       --set leEmail=xxx@xxx.xxx \
       --set cfEmail=xxx@xxx.xxx \
       --create-namespace \
-      -n xxx
+      -n cert-manager
     ```
 
     ```bash
@@ -133,6 +133,31 @@ Current config: access logging (JSON format) + Prometheus metrics endpoint on po
       --set cfEmail=xxx@xxx.xxx
     ```
 
+3. Check the installation
+  
+    ```bash
+      # 1. Check all cert-manager pods are Running
+    kubectl get pods -n cert-manager
+
+    # 2. Check the ClusterIssuer is Ready (READY should be True)                                                                                       
+    kubectl get clusterissuer
+
+    # 3. Check the Certificate status (READY should be True)
+    kubectl get certificate -n cert-manager
+
+    # 4. Check the CertificateRequest (if cert is still being issued)                                                                                  
+    kubectl get certificaterequest -n cert-manager
+
+    # 5. If anything looks off, describe the clusterissuer for events/errors                                                                           
+    kubectl describe clusterissuer letsencrypt-prod
+
+    # 6. If the cert is pending, describe it to see why
+    kubectl describe certificate -n cert-manager
+
+    # 7. Check cert-manager controller logs for errors
+    kubectl logs -n cert-manager deployment/cert-manager
+    ```
+
 ### Vaultwarden
 
 #### Vaultwarden - REF
@@ -141,9 +166,11 @@ Current config: access logging (JSON format) + Prometheus metrics endpoint on po
 
 ```bash
 # Installation
-# helm uninstall vaultwarden -n catopia
+# helm uninstall vaultwarden -n vaultwarden
 export RELEASE_NAME=vaultwarden
-export NAMESPACE=catopia
+export NAMESPACE=vaultwarden
+
+kubectl apply -f k3s/helm/vaultwarden/vw-pvc.yaml
 
 helm install \
   $RELEASE_NAME vaultwarden/vaultwarden \
@@ -166,6 +193,8 @@ helm upgrade -i \
   -n $NAMESPACE \
   --version $VERSION \
   --reset-then-reuse-values
+
+kubectl logs -f -n vaultwarden -l app.kubernetes.io/instance=vaultwarden
 ```
 
 #### Vaultwarden - Postgres Backup

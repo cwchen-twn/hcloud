@@ -109,7 +109,7 @@ Grafana is accessible at `https://grafana.chenantunez.com`. Three dashboards (No
 Uses `k3s/helm/vaultwarden/values.yaml`. Sensitive values come from the `vw-secrets` Kubernetes secret:
 
 ```bash
-kubectl create secret generic vw-secrets -n catopia \
+kubectl create secret generic vw-secrets -n vaultwarden \
   --from-literal=PG_URI="postgresql://user:pass@host:port/vaultwarden" \
   --from-literal=VW_HOST="vw.example.com" \
   --from-literal=VW_ADMIN_TOKEN="xxx" \
@@ -120,7 +120,7 @@ kubectl create secret generic vw-secrets -n catopia \
 kubectl apply -f k3s/helm/vaultwarden/vw-pvc.yaml
 
 helm install vaultwarden vaultwarden/vaultwarden \
-  -n catopia \
+  -n vaultwarden \
   --set domain="https://vw.example.com/" \
   --set ingress.hostname="vw.example.com" \
   --set ingress.tlsSecret="example.com-tls" \
@@ -131,7 +131,7 @@ helm install vaultwarden vaultwarden/vaultwarden \
 
 # Upgrade
 helm upgrade -i vaultwarden vaultwarden/vaultwarden \
-  -n catopia --version 0.36.2 --reset-then-reuse-values
+  -n vaultwarden --version 0.36.2 --reset-then-reuse-values
 ```
 
 ### Gitea (local chart wrapper with sub-chart dependency)
