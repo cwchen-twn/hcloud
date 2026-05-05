@@ -53,6 +53,28 @@ grafana:
     userKey: "GF_ADMIN_USER"
     passwordKey: "GF_ADMIN_PASSWORD"
 
+  env:
+    GF_SMTP_ENABLED: "true"
+    GF_SMTP_FROM_NAME: "Grafana Chen Antunez"
+    GF_SMTP_SKIP_VERIFY: "false"
+  envValueFrom:
+    GF_SMTP_HOST:
+      secretKeyRef:
+        name: monitor-secrets
+        key: SMTP_HOST
+    GF_SMTP_USER:
+      secretKeyRef:
+        name: monitor-secrets
+        key: SMTP_USER
+    GF_SMTP_PASSWORD:
+      secretKeyRef:
+        name: monitor-secrets
+        key: SMTP_PASSWD
+    GF_SMTP_FROM_ADDRESS:
+      secretKeyRef:
+        name: monitor-secrets
+        key: SMTP_FROM
+
   persistence:
     enabled: true
     size: 5Gi

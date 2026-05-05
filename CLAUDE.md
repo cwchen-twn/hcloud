@@ -88,7 +88,11 @@ Sensitive values come from the `monitor-secrets` Kubernetes secret:
 kubectl create secret generic monitor-secrets -n monitoring \
   --from-literal=GF_ADMIN_USER="admin" \
   --from-literal=GF_ADMIN_PASSWORD="xxx" \
-  --from-literal=PG_DATA_SOURCE="postgresql://user:pass@10.0.1.1:5432/postgres?sslmode=disable"
+  --from-literal=PG_DATA_SOURCE="postgresql://user:pass@10.0.1.1:5432/postgres?sslmode=disable" \
+  --from-literal=SMTP_HOST="smtp.purelymail.com:465" \
+  --from-literal=SMTP_USER="xxx" \
+  --from-literal=SMTP_PASSWD="xxx" \
+  --from-literal=SMTP_FROM="xxx@example.com"
 
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo add grafana https://grafana.github.io/helm-charts

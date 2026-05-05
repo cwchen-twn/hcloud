@@ -58,6 +58,10 @@ kubectl create secret generic monitor-secrets -n monitoring \
   --from-literal=GF_ADMIN_USER="admin" \
   --from-literal=GF_ADMIN_PASSWORD="xxx" \
   --from-literal=PG_DATA_SOURCE="postgresql://xxx:xxx@xx.xx.xx.xx:xxx/postgres?sslmode=disable"
+  --from-literal=SMTP_HOST="xxx.xxx.xxx.xxx:xxx" \
+  --from-literal=SMTP_USER="xxx" \
+  --from-literal=SMTP_PASSWD="xxx" \
+  --from-literal=SMTP_FROM="xxx@example.com"
 
 kubectl create secret generic gitea-secrets -n gitea \
   --from-literal=username="xxx" \
@@ -241,6 +245,7 @@ helm install \
 # Verify all pods come up
 kubectl get pods -n $NAMESPACE
 kubectl get pods -n kube-system -l app.kubernetes.io/name=traefik
+kubectl logs -n monitoring -l app.kubernetes.io/name=grafana
 ```
 
 Grafana is available at `https://grafana.chenantunez.com` once the ingress and TLS certificate are ready. The three dashboards (Node Exporter Full, PostgreSQL, Traefik) are downloaded from grafana.com on first pod startup.
