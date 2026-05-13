@@ -103,10 +103,10 @@ grafana:
           options:
             path: /var/lib/grafana/dashboards/default
 
-  # postgres-exporter and traefik dashboards are downloaded from grafana.com
-  # at pod startup via the download-dashboards init container.
-  # node-exporter dashboard is provisioned via ConfigMap (see templates/) to
-  # fix the node_boot_time → node_boot_time_seconds metric rename in v1.x.
+  # All dashboards are provisioned via ConfigMap (see templates/).
+  # node-exporter: ConfigMap to fix the node_boot_time → node_boot_time_seconds metric rename in v1.x.
+  # k3s: Grafana dashboard 19972 (K3S Monitoring). Uses container_* metrics from the prometheus chart's
+  #   built-in kubernetes-nodes-cadvisor job (instance label = node hostname). No extra scrape jobs needed.
   dashboards:
     default: {}
 
